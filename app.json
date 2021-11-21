@@ -1,0 +1,66 @@
+{
+  "name": "LibreView to Nightscout Bridge",
+  "repository": "https://github.com/skobkars/lvconnect",
+  "env": {
+    "API_SECRET": {
+      "description": "This must match the API_SECRET password from your Nightscout website.",
+      "value": "",
+      "required": true
+    },
+    "WEBSITE_HOSTNAME": {
+      "description": "The host name for your Nightscout website.  Example: sitename.herokuapp.com or sitename.azurewebsites.net.  Do not include http:// or https://",
+      "value": "",
+      "required": true
+    },
+    "NS": {
+      "description": "A fully-qualified Nightscout URL (e.g. https://sitename.herokuapp.com) which overrides WEBSITE_HOSTNAME",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_SERVER": {
+      "description": "LibreView api website. ['EU', 'US', or any actual hostname]. Blank value can be used to get redirect LibreView servers in the US. Set to (EU) to fetch from servers outside of US from the beginning.",
+      "value": "",
+      "required": true
+    },
+    "LVCONNECT_PRO_USER_NAME": {
+      "description": "OPTIONAL. Account email for the Pro LibreView service.",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_PRO_PASSWORD": {
+      "description": "OPTIONAL. Password for the Pro LibreView service.",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_PATIENT_ID": {
+      "description": "OPTIONAL. LibreView Pro connected patient UUID. Used with Pro accounts to access one of the connected patients data. Ignored for personal LibreView accounts.",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_USER_NAME": {
+      "description": "Personal account email for the Pro LibreView service. Overrides LVCONNECT_PRO_USER_NAME. Can be left empty if Pro account is used",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_PASSWORD": {
+      "description": "Personal password for the Pro LibreView service. Overrides LVCONNECT_PRO_PASSWORD. Can be left empty if Pro account is used",
+      "value": "",
+      "required": false
+    },
+    "LVCONNECT_INTERVAL": {
+      "description": "The time (in milliseconds) to wait between each update. Default is 3600000 = 1 hour",
+      "value": 3600000,
+      "required": false
+    },
+    "LVCONNECT_MAX_FAILURES": {
+      "description": "OPTIONAL: The maximum number of attempts to connect to the LibreView server. Default: 3",
+      "value": 3,
+      "required": false
+    },
+    "LVCONNECT_FIRST_FULL_DAYS": {
+      "description": "OPTIONAL: The number of days to search for data on the first update only. Default: 90 days",
+      "value": 90,
+      "required": false
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "lvconnect",
+  "version": "0.1.0",
+  "description": "Fetches data from LibreView's webservice and puts it in Nightscout",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/skobkars/lvconnect.git"
+  },
+  "keywords": [
+    "libreview",
+    "nightscout",
+    "freelibre",
+    "cgm"
+  ],
+  "author": "Sergey Skobkarev",
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/skobkars/lvconnect/issues"
+  },
+  "homepage": "https://github.com/skobkars/lvconnect#readme",
+  "dependencies": {
+    "promise": "^8.1.0",
+    "promise-retry": "^2.0.1",
+    "request": "^2.88.2"
+  }
+}
