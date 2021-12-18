@@ -643,11 +643,11 @@ if( !module.parent ) {
               `lvconnect: attempt to login and fetch data # ${n}`
             );
             return authorize( params )
-            .then ( () => { return fetch( params );                        } )
             .catch( retry );
           }
         );
       })
+      .then ( ()   => { return fetch( params );                            } )
       .then ( lv   => { return saveData( lv );                             } )
       .then ( lv   => { return convertAll( lv );                           } )
       .then ( ns   => { console.dir( ns, { depth: null } );                } )
@@ -665,11 +665,11 @@ if( !module.parent ) {
               `lvconnect: attempt to login, fetch and upload data # ${n}`
             );
             return authorize( params )
-            .then ( () => { return fetch( params );                        } )
             .catch( retry );
           }
         );
       })
+      .then ( ()   => { return fetch( params );                            } )
       .then ( lv   => { return saveData( lv );                             } )
       .then ( lv   => { return convertAll( lv );                           } )
       .then ( ns   => { return uploadToNightscout( params, ns );           } )
