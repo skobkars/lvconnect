@@ -19,11 +19,13 @@ lvconnect copies your CGM data from LibreView web services to a [Nightscout](htt
 * `LVCONNECT_SERVER` (api.libreview.io)- LibreView api website. ['EU', 'US', or any actual hostname]. Blank value can be used to get redirect LibreView servers in the US. Set to (EU) to fetch from servers outside of US from the beginning.
 * `LVCONNECT_USER_NAME` - Your personal account email for the Pro LibreView service. Overrides LVCONNECT_PRO_USER_NAME if set. Can be left empty if Pro account is used (see below).
 * `LVCONNECT_PASSWORD` - Your personal password for the Pro LibreView service. Overrides LVCONNECT_PRO_PASSWORD if set. Can be left empty if Pro account is used (see below).
+* `LVCONNECT_FINGERPRINT` - Your LibreView account's fingerprint for skipping 2FA code verification step.
 
 #### Optional
 
 * `LVCONNECT_PRO_USER_NAME` - Account email for the Pro LibreView service.
 * `LVCONNECT_PRO_PASSWORD` - Password for the Pro LibreView service.
+* `LVCONNECT_PRO_FINGERPRINT` - Your Pro LibreView account's fingerprint for skipping 2FA code verification step.
 * `LVCONNECT_PATIENT_ID` - LibreView Pro connected patient UUID. Used with Pro accounts to access one of the connected patients data. Ignored for personal LibreView accounts.
 * `LVCONNECT_INTERVAL` (3600000) - The time (in milliseconds) to wait between each update. Default is 1 hour
 * `LVCONNECT_MAX_FAILURES` (3) -The maximum number of attempts to connect to the LibreView server.

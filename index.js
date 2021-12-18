@@ -87,7 +87,7 @@ function login( params ) {
           body: {
             "email":    params.login.accountName,
             "password": params.login.password,
-            "fingerprint" : ""
+            "fingerprint" : params.login.fingerprint
           },
           json: true,
           rejectUnauthorized: true
@@ -230,6 +230,9 @@ function getDataSources() {
 
       } else if( body.error ) { // login filed
         reject( `Failed getting reportSettings (for data sources): ${body.error.message}` );
+
+      } else if( body.message ) { // login filed
+        reject( `getDataSources: Cannot get data sources, received message: '${body.message}'` );
 
       } else { // no sensible data has been returned
         reject( "getDataSources: Unknown response, check connection parameters." );
@@ -596,8 +599,9 @@ if( !module.parent ) {
 
   let params = {
     login         : {
-      accountName : readENV("LVCONNECT_USER_NAME") || readENV("LVCONNECT_PRO_USER_NAME"),
-      password    : readENV("LVCONNECT_PASSWORD")  || readENV("LVCONNECT_PRO_PASSWORD"),
+      accountName : readENV("LVCONNECT_USER_NAME")   || readENV("LVCONNECT_PRO_USER_NAME"),
+      password    : readENV("LVCONNECT_PASSWORD")    || readENV("LVCONNECT_PRO_PASSWORD"),
+      fingerprint : readENV("LVCONNECT_FINGERPRINT") || readENV("LVCONNECT_PRO_FINGERPRINT"),
       patientId   : readENV("LVCONNECT_PATIENT_ID")
     },
     nightscout    : {

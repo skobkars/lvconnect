@@ -6,8 +6,9 @@ var engine = require('lvconnect');
 
 function init( env, bus ) {
   if(   env.extendedSettings.lvconnect          &&
-      ( env.extendedSettings.lvconnect.userName || env.extendedSettings.lvconnect.proUserName ) &&
-      ( env.extendedSettings.lvconnect.password || env.extendedSettings.lvconnect.proPassword )) {
+      ( env.extendedSettings.lvconnect.userName    || env.extendedSettings.lvconnect.proUserName    ) &&
+      ( env.extendedSettings.lvconnect.password    || env.extendedSettings.lvconnect.proPassword    )) &&
+      ( env.extendedSettings.lvconnect.fingerprint || env.extendedSettings.lvconnect.proFingerprint )) {
 
     return create( env, bus );
 
@@ -24,6 +25,8 @@ function create( env, bus ) {
                     env.extendedSettings.lvconnect.proUserName,
       password    : env.extendedSettings.lvconnect.password ||
                     env.extendedSettings.lvconnect.proPassword,
+      fingerprint : env.extendedSettings.lvconnect.fingerprint ||
+                    env.extendedSettings.lvconnect.proFingerprint,
       patientId   : env.extendedSettings.lvconnect.patientId
     },            // No shorter than 1 minute, or longer than 8 hours
     interval      : env.extendedSettings.lvconnect.interval >    59999 ||
