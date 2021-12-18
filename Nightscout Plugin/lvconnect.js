@@ -7,7 +7,7 @@ var engine = require('lvconnect');
 function init( env, bus ) {
   if(   env.extendedSettings.lvconnect          &&
       ( env.extendedSettings.lvconnect.userName    || env.extendedSettings.lvconnect.proUserName    ) &&
-      ( env.extendedSettings.lvconnect.password    || env.extendedSettings.lvconnect.proPassword    )) &&
+      ( env.extendedSettings.lvconnect.password    || env.extendedSettings.lvconnect.proPassword    ) &&
       ( env.extendedSettings.lvconnect.fingerprint || env.extendedSettings.lvconnect.proFingerprint )) {
 
     return create( env, bus );
