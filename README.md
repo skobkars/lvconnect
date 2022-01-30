@@ -1,6 +1,8 @@
 lvconnect
 =========
 
+[![Deploy to Heroku][https://www.herokucdn.com/deploy/button.png]][https://heroku.com/deploy?template=https://github.com/skobkars/lvconnect]
+
 lvconnect copies your CGM data from LibreView web services to a [Nightscout](https://github.com/nightscout/cgm-remote-monitor) website. The tool runs as `node.js index.js`, or as a Nightscout plugin, and will atempt to connect to your LibreView account, fetch data and upload to your Nightscout website via its REST API.
 
 ### Prerequisites
