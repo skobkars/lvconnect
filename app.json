@@ -63,7 +63,7 @@
       "required": false
     },
     "LVCONNECT_PRO_FINGERPRINT": {
-      "description": "Your Pro LibreView account's fingerprint for skipping 2FA code verification step.",
+      "description": "Your LibreView account's fingerprint for skipping 2FA code verification step.",
       "value": "",
       "required": false
     }
