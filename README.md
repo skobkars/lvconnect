@@ -33,6 +33,7 @@ lvconnect copies your CGM data from LibreView web services to a [Nightscout](htt
 * `LVCONNECT_MAX_FAILURES` (3) -The maximum number of attempts to connect to the LibreView server.
 * `LVCONNECT_FIRST_FULL_DAYS` (90) - The number of days to search for data on the first update only.
 * `NS` - A fully-qualified Nightscout URL (e.g. `https://sitename.herokuapp.com`) which overrides `WEBSITE_HOSTNAME`
+* `LVCONNECT_TIME_OFFSET` - Time difference in MINUTES between UTC and your location. LibreView treats your local time as UTC and doesn't report the actual time differences, so data will be shown with wrong timestamps if this parameter is not set. If used as Nightscout plugin leave this empty, as your browser's new Date().getTimezoneOffset() will be applied automatically.
 
 ### More information
 
@@ -48,6 +49,14 @@ The following three command line parameters are used for development and debuggi
 In development mode lvconnect only fetches data once per call, and its current session is saved to a `session.json` file and is resused for next calls. It also re-uses authentication tokens until they expire, or obtaines new ones as required.
 
 Deletion of the `session.json` file will enforce new session start.
+
+### How to deploy to Heroku
+
+Click 'Deploy to Heroku' button above and configure all of the variables as per descriptions, then click 'Deploy app'.
+
+After the app is built and started click 'Manage app' button or go to Overview tab, then click 'Configure Dynos' link. Disable 'web' and enable 'worker' processes, confirm changes. Lvconnect does not have web interface when used as a standalone tool, and having 'web' process will cause app crashes.
+
+**Make sure that you correctly set `LVCONNECT_TIME_OFFSET` variable, as LibreView is not using timezones internally and therefore there is no way for lvconnect to know what your local time is. `LVCONNECT_TIME_OFFSET` is set in minutes to accomodate 1/2 hour timezones, not in hours!**
 
 ### Disclaimer
 
