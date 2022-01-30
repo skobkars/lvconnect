@@ -1,4 +1,6 @@
 // For setting up as Nightscout plugin replace lib/server/bootevent.js with this file
+// NOTE: THIS IS JUST AN EXAMPLE OF HOW lvconnect CAN BE USED AS A PLUGIN.
+// THIS IS BASED ON Nightscout v 14.1.0! DO NOT USE WITH DIFFERENT VERSIONS
 
 'use strict';
 

@@ -1,4 +1,5 @@
 // For setting up as Nightscout plugin put this file to to lib/plugins
+// NOTE: THIS IS BASED ON Nightscout v 14.1.0! DO NOT USE WITH DIFFERENT VERSIONS
 
 'use strict';
 
