@@ -61,6 +61,11 @@
       "description": "OPTIONAL: The number of days to search for data on the first update only. Default: 90 days",
       "value": 90,
       "required": false
+    },
+    "LVCONNECT_PRO_FINGERPRINT": {
+      "description": "Your Pro LibreView account's fingerprint for skipping 2FA code verification step.",
+      "value": "",
+      "required": false
     }
   }
 }
