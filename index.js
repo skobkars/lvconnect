@@ -34,7 +34,7 @@ const Promise            = require("promise"),
       agent              = `${meta.name}/${meta.version}`,
       min_secret_length  = 12
 
-let   localTMZ     = new Date().getTimezoneOffset() * 60,
+let   localTMZ     = ( readENV("LVCONNECT_TIME_OFFSET",0) || new Date().getTimezoneOffset() ) * 60,
       session      = {
         server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
         uriPrefix  : "",
@@ -545,7 +545,7 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ = new Date().getTimezoneOffset() * 60;
+  localTMZ = ( params.timeOffset || new Date().getTimezoneOffset() ) * 60
   console.info( `localTMZ: ${localTMZ}` );
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
@@ -609,7 +609,8 @@ if( !module.parent ) {
       endpoint    : readENV("NS", "https://" + readENV("WEBSITE_HOSTNAME"))
     },
     maxFailures   : readENV("LVCONNECT_MAX_FAILURES", 3),
-    firstFullDays : readENV("LVCONNECT_FIRST_FULL_DAYS", 90)
+    firstFullDays : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
+    timeOffset    : readENV("LVCONNECT_TIME_OFFSET", 0)
   };
 
   // set initial fetch time in case this is a first run

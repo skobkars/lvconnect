@@ -1,5 +1,6 @@
 // For setting up as Nightscout plugin put this file to to lib/plugins
-// NOTE: THIS IS BASED ON Nightscout v 14.1.0! DO NOT USE WITH DIFFERENT VERSIONS
+// NOTE: THIS IS JUST AN EXAMPLE OF HOW lvconnect CAN BE USED AS A PLUGIN.
+// THIS IS BASED ON Nightscout v 14.1.0! DO NOT USE WITH DIFFERENT VERSIONS
 
 'use strict';
 
@@ -35,7 +36,8 @@ function create( env, bus ) {
                     env.extendedSettings.lvconnect.interval :  3600000,
     nightscout    : {},
     maxFailures   : env.extendedSettings.lvconnect.maxFailures   || 3,
-    firstFullDays : env.extendedSettings.lvconnect.firstFullDays || 1
+    firstFullDays : env.extendedSettings.lvconnect.firstFullDays || 1,
+    timeOffset    : env.extendedSettings.lvconnect.timeOffset || 0
   };
 
   return {

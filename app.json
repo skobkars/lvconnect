@@ -66,6 +66,11 @@
       "description": "Your LibreView account's fingerprint for skipping 2FA code verification step.",
       "value": "",
       "required": false
+    },
+    "LVCONNECT_TIME_OFFSET": {
+      "descripton": "Time difference in MINUTES between UTC and your location. LibreView treats your time as UTC and doesn't report the actual difference. Data will not be shown as if your local time is UTC time otherwise. If used as Nightscout plugin leave this empty, as your browsers new Date().getTimezoneOffset() will be applied automatically",
+      "value": "",
+      "required": false
     }
   }
 }

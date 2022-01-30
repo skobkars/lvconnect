@@ -1,0 +1,14 @@
+// For setting up as Nightscout plugin put this file to to lib/plugins
+// NOTE: THIS IS JUST AN EXAMPLE OF HOW lvconnect CAN BE USED AS A PLUGIN.
+// THIS IS BASED ON Nightscout v 14.1.0! DO NOT USE WITH DIFFERENT VERSIONS
+//
+// You also need to use npm install locally to update npm-shrinkwrap.json
+// before deploying to Heroku.
+
+...
+"dependencies": {
+  ...
+  "lvconnect": "^0.1.3",
+  ...
+}
+...
