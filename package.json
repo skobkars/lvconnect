@@ -23,5 +23,8 @@
     "promise": "^8.1.0",
     "promise-retry": "^2.0.1",
     "request": "^2.88.2"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }
