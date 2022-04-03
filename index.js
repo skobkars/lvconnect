@@ -103,15 +103,60 @@ function login( params ) {
               console.debug( "redirected to:", session.server );
               reject( `redirected to ${session.server}` );
 
-            } else if( body.data.user ) { // received user data
-              // allow different patient ID only for Pro accounst
-              session.user.id          = body.data.user.id;
-              session.user.accountType = body.data.user.accountType;
+            } else if( body.data.user ) { // login successful
               session.authToken        = body.data.authTicket.token;
               session.tokenExpires     = +new Date() + body.data.authTicket.duration;
 
-              console.debug( "loging successful:", session.user.id );
-              resolve( "renewed" );
+              if( body.data.user.id ) { // if user data present
+                session.user.id          = body.data.user.id;
+                session.user.accountType = body.data.user.accountType;
+
+                console.debug( "loging successful:", session.user.id );
+                resolve( "renewed" );
+
+              } else { // otherwise get user data
+                return request({
+                  method: "GET",
+                  uri: `https://${session.server}/user`,
+                  headers: {
+                    "User-Agent": agent,
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${session.authToken}`
+                  },
+                  json: true,
+                  rejectUnauthorized: true
+
+                }, (error, response, body) => {
+                  if( error ) return reject( error );
+
+                  if( body.data ) {
+
+                    if( body.data.redirect ) { // redirect was received
+                      // { country: "CA", redirect: true, region: "eu", uiLanguage: "en-US" }
+                      session.server = toLvapiHost(body.data.region.toUpperCase());
+                      console.debug( "redirected to:", session.server );
+                      reject( `redirected to ${session.server}` );
+
+                    } else if( body.data.user ) { // received user data
+                      // allow different patient ID only for Pro accounst
+                      session.user.id          = body.data.user.id;
+                      session.user.accountType = body.data.user.accountType;
+                      session.authToken        = body.data.authTicket.token;
+                      session.tokenExpires     = +new Date() + body.data.authTicket.duration;
+
+                      console.debug( "loging successful:", session.user.id );
+                      resolve( "renewed" );
+                    }
+
+                  } else if( body.error ) { // login filed
+                    reject( `login: Check credentals. Error: ${body.error.message}` );
+
+                  } else { // no sensible data has been returned
+                    reject( "login: Unknown response, check connection parameters." );
+
+                  }
+                });
+              }
             }
 
           } else if( body.error ) { // login filed
@@ -272,10 +317,15 @@ function generateReports() {
           SecondaryDeviceIds                  : session.patient.secDevices,
           PrintReportsWithPatientInformation  : false,
           ReportIds                           : [ 500000 + session.patient.primDevice.typeId ],
-          ClientReportIDs                     : [0],
+          ClientReportIDs                     : [ 5 ],
           StartDates                          : [ session.lastDataTm - localTMZ ],
           EndDate                             : Math.floor(+new Date() / 1000),
-          PatientId                           : session.patient.id
+          PatientId                           : session.patient.id,
+          CultureCode                         : "en-US",
+          // Country: "CA",
+          // CultureCodeCommunication: "en-US",
+          // DateFormat: 2,
+          // GlucoseUnits: 0,
         },
         json: true,
         rejectUnauthorized: true
@@ -354,8 +404,9 @@ function getReportUrl( url ) {
       if( error ) return reject( error );
 
       if( body.args ) {
-        if( body.args.urls && body.args.urls[0] )
-          resolve( body.args.urls[0] );
+        if( body.args.urls && body.args.urls[5] )
+          resolve( body.args.urls[5] );
+
         else
           reject( "getReportUrl: No report URL provided." );
 
@@ -374,7 +425,7 @@ function downloadReport( url ) {
       uri: `${url}?session=${session.authToken}`,
       headers: {
         "User-Agent": agent,
-        "Accept": "text/plain",
+        "Accept": "text/html"
       },
       rejectUnauthorized: true
 
@@ -392,7 +443,7 @@ function downloadReport( url ) {
         }
 
       } else { // no sensible data has been returned
-        console.log(response);
+        console.debug(response);
         reject( "downloadReport: Unknown response, check connection parameters." );
 
       }
