@@ -433,7 +433,7 @@ function downloadReport( url ) {
       if( error ) return reject( error );
 
       if( body ) {
-        const found = body.match(/DataForLibreDailyLog\s*=\s*({.*})/);
+        const found = body.match(/window.Report\s*=\s*({.*})/);
         if( found && found.length>1 ) {
           try { resolve( JSON.parse(found[1]).Data ); }
           catch( err ) { reject( err ); }
