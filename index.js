@@ -433,7 +433,7 @@ function downloadReport( url ) {
       if( error ) return reject( error );
 
       if( body ) {
-        const found = body.match(/window.Report\s*=\s*({.*})/);
+        const found = body.match(/window.report\s*=\s*({.*})/i);
         if( found && found.length>1 ) {
           try { resolve( JSON.parse(found[1]).Data ); }
           catch( err ) { reject( err ); }
