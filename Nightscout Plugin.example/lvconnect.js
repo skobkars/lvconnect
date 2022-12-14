@@ -16,9 +16,9 @@ function init( env, bus ) {
         ||  ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.usProPassword )
         ||    env.extendedSettings.lvconnect.proPassword
       ) &&
-      ( env.extendedSettings.lvconnect.fingerprint
-        ||  ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.uspProFingerprint )
-        ||    env.extendedSettings.lvconnect.proFingerprint
+      ( env.extendedSettings.lvconnect.trustedDeviceToken
+        ||  ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.uspProTrustedDeviceToken )
+        ||    env.extendedSettings.lvconnect.proTrustedDeviceToken
       )
   ) {
 
@@ -41,10 +41,10 @@ function create( env, bus ) {
                     ( env.extendedSettings.lvconnect.server == 'US' ?
                       env.extendedSettings.lvconnect.usProPassword :
                       env.extendedSettings.lvconnect.proPassword ),
-      fingerprint : env.extendedSettings.lvconnect.fingerprint ||
+      trustedDeviceToken : env.extendedSettings.lvconnect.trustedDeviceToken ||
                     ( env.extendedSettings.lvconnect.server == 'US' ?
-                      env.extendedSettings.lvconnect.usProFingerprint :
-                      env.extendedSettings.lvconnect.proFingerprint ),
+                      env.extendedSettings.lvconnect.usProTrustedDeviceToken :
+                      env.extendedSettings.lvconnect.proTrustedDeviceToken ),
       patientId   : env.extendedSettings.lvconnect.patientId
     },            // No shorter than 1 minute, or longer than 8 hours
     interval      : env.extendedSettings.lvconnect.interval >    59999 ||

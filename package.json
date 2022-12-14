@@ -1,6 +1,6 @@
 {
   "name": "lvconnect",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Fetches data from LibreView's webservice and puts it in Nightscout",
   "main": "index.js",
   "repository": {

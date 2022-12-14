@@ -87,7 +87,7 @@ function login( params ) {
           body: {
             "email":    params.login.accountName,
             "password": params.login.password,
-            "fingerprint" : params.login.fingerprint
+            "trustedDeviceToken": params.login.trustedDeviceToken
           },
           json: true,
           rejectUnauthorized: true
@@ -650,10 +650,10 @@ if( !module.parent ) {
 
   let params = {
     login         : {
-      accountName : readENV("LVCONNECT_USER_NAME")   || readENV("LVCONNECT_PRO_USER_NAME"),
-      password    : readENV("LVCONNECT_PASSWORD")    || readENV("LVCONNECT_PRO_PASSWORD"),
-      fingerprint : readENV("LVCONNECT_FINGERPRINT") || readENV("LVCONNECT_PRO_FINGERPRINT"),
-      patientId   : readENV("LVCONNECT_PATIENT_ID")
+      accountName        : readENV("LVCONNECT_USER_NAME")   || readENV("LVCONNECT_PRO_USER_NAME"),
+      password           : readENV("LVCONNECT_PASSWORD")    || readENV("LVCONNECT_PRO_PASSWORD"),
+      trustedDeviceToken : readENV("LVCONNECT_TRUSTED_DEVICE_TOKEN"),
+      patientId          : readENV("LVCONNECT_PATIENT_ID")
     },
     nightscout    : {
       API_SECRET  : readENV("API_SECRET"),

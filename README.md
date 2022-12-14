@@ -21,7 +21,7 @@ lvconnect copies your CGM data from LibreView web services to a [Nightscout](htt
 * `LVCONNECT_SERVER` (api.libreview.io)- LibreView api website. ['EU', 'US', or any actual hostname]. Blank value can be used to get redirect LibreView servers in the US. Set to (EU) to fetch from servers outside of US from the beginning.
 * `LVCONNECT_USER_NAME` - Your personal account email for the Pro LibreView service. Overrides LVCONNECT_PRO_USER_NAME if set. Can be left empty if Pro account is used (see below).
 * `LVCONNECT_PASSWORD` - Your personal password for the Pro LibreView service. Overrides LVCONNECT_PRO_PASSWORD if set. Can be left empty if Pro account is used (see below).
-* `LVCONNECT_FINGERPRINT` - Your LibreView account's fingerprint for skipping 2FA code verification step.
+* `LVCONNECT_TRUSTED_DEVICE_TOKEN` - Trusted device token for 2FA verification
 
 #### Optional
 

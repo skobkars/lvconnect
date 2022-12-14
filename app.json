@@ -47,6 +47,11 @@
       "value": "",
       "required": false
     },
+    "LVCONNECT_TRUSTED_DEVICE_TOKEN": {
+      "description": "Personal account's trusted device token for 2FA verification",
+      "value": "",
+      "required": false
+    },
     "LVCONNECT_INTERVAL": {
       "description": "The time (in milliseconds) to wait between each update. Default is 3600000 = 1 hour",
       "value": "3600000",
@@ -62,8 +67,8 @@
       "value": "90",
       "required": false
     },
-    "LVCONNECT_PRO_FINGERPRINT": {
-      "description": "Your LibreView account's fingerprint for skipping 2FA code verification step.",
+    "LVCONNECT_PRO_TRUSTED_DEVICE_TOKEN": {
+      "description": "Pro account's trusted device token for 2FA verification",
       "value": "",
       "required": false
     },
