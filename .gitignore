@@ -34,3 +34,6 @@ session*.json
 fetched*.json
 *.swp
 .remote-sync.json
+
+# Credentials data
+credentials.json

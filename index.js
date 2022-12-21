@@ -34,7 +34,7 @@ const Promise            = require("promise"),
       agent              = `${meta.name}/${meta.version}`,
       min_secret_length  = 12
 
-let   localTMZ     = ( readENV("LVCONNECT_TIME_OFFSET",0) || new Date().getTimezoneOffset() ) * 60,
+let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60,
       session      = {
         server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
         uriPrefix  : "",
@@ -42,6 +42,40 @@ let   localTMZ     = ( readENV("LVCONNECT_TIME_OFFSET",0) || new Date().getTimez
         user       : {},
         patient    : {}
       };
+
+/**
+ * Downloads credentials,json from url if it is not the first attempt to log in
+ * See credentials.json.example
+ */
+function getProCredentials( params, attempt ) {
+  return new Promise( ( resolve, reject ) => {
+    if( attempt == 1  || !params.login.proCredentialsUrl || !params.login.proCredentialsKey ) {
+      // Not the first attempt to login, cheking if parameters change?
+      return resolve( true );
+
+    } else {
+      return request({
+        method: "GET",
+        uri: params.login.proCredentialsUrl,
+        headers: { "Accept": "application/json" },
+        json: true
+      }, (error, response, body) => {
+        if( error ) return reject( error );
+
+        if( body[params.login.proCredentialsKey] ) {
+          session.server = toLvapiHost(body[params.login.proCredentialsKey].server.toUpperCase());
+          params.login.accountName = body[params.login.proCredentialsKey].accountName;
+          params.login.password = body[params.login.proCredentialsKey].password;
+          params.login.trustedDeviceToken = body[params.login.proCredentialsKey].trustedDeviceToken;
+          resolve( true );
+
+        } else { // no sensible data returned
+          reject( "getProCredentials: Unknown response, check connection parameters." );
+        }
+      });
+    }
+  });
+}
 
 /**
  * Checks if Lvapi: <version> header is present in responses to
@@ -223,8 +257,11 @@ function getPatientData( params ) {
  * Also allows to use redirects sent by server in body.
  * @param {object} params - connection parameters
  */
-function authorize( params ) {
-  return login( params )
+function authorize( params, attempt ) {
+  return getProCredentials( params, attempt )
+  .then( (    ) => {
+    return login( params )
+  })
   .then( status => {
     if( status === "renewed" ) {
       if( session.user.id == params.login.patientId || session.user.accountType == "pat" ) {
@@ -237,9 +274,7 @@ function authorize( params ) {
         return getPatientData( params );
 
       } else {
-        return new Promise( ( resolve, reject ) => {
-          reject( "no patient ID specified for Pro account type" );
-        });
+        return Promise.reject( "no patient ID specified for Pro account type" );
       }
     } else {
       return status;
@@ -596,7 +631,8 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ = ( params.timeOffset || new Date().getTimezoneOffset() ) * 60
+  localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
+      new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
   console.info( `localTMZ: ${localTMZ}` );
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
@@ -604,17 +640,20 @@ function engine( params ) {
       localTMZ - params.firstFullDays * 86400;
 
   function my() {
-    return promiseRetry(
-      { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5 },
-      ( retry, n ) => {
-        console.debug(
-          `lvconnect: attempt to login, fetch and upload data # ${n}`
-        );
-        return authorize( params )
-        .then ( () => { return fetch( params );                        } )
-        .catch( retry );
-      }
-    )
+    return getProCredentials( params, 0 ) // initial credentals check
+    .then ( () => {
+      return promiseRetry(
+        { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5 },
+        ( retry, n ) => {
+          console.debug(
+            `lvconnect: attempt to login, fetch and upload data # ${n}`
+          );
+          return authorize( params, n )
+                .then ( () => { return fetch( params );                  } )
+                .catch( retry );
+        }
+      )
+    })
     .then ( lv   => { return convertAll( lv );                         } )
     .then ( ns   => { return uploadToNightscout( params, ns );         } )
     .catch( err  => { console.debug( err );                            } );
@@ -650,18 +689,20 @@ if( !module.parent ) {
 
   let params = {
     login         : {
-      accountName        : readENV("LVCONNECT_USER_NAME")   || readENV("LVCONNECT_PRO_USER_NAME"),
-      password           : readENV("LVCONNECT_PASSWORD")    || readENV("LVCONNECT_PRO_PASSWORD"),
-      trustedDeviceToken : readENV("LVCONNECT_TRUSTED_DEVICE_TOKEN"),
-      patientId          : readENV("LVCONNECT_PATIENT_ID")
+      accountName        : readENV("LVCONNECT_USER_NAME")            || readENV("LVCONNECT_PRO_USER_NAME"),
+      password           : readENV("LVCONNECT_PASSWORD")             || readENV("LVCONNECT_PRO_PASSWORD"),
+      trustedDeviceToken : readENV("LVCONNECT_TRUSTED_DEVICE_TOKEN") || readENV("LVCONNECT_PRO_TRUSTED_DEVICE_TOKEN"),
+      patientId          : readENV("LVCONNECT_PATIENT_ID"),
+      proCredentialsUrl  : readENV("LVCONNECT_PRO_CREDENTIALS_URL"),
+      proCredentialsKey  : readENV("LVCONNECT_PRO_CREDENTIALS_KEY")
     },
     nightscout    : {
-      API_SECRET  : readENV("API_SECRET"),
-      endpoint    : readENV("NS", "https://" + readENV("WEBSITE_HOSTNAME"))
+      API_SECRET      : readENV("API_SECRET"),
+      endpoint        : readENV("NS", "https://" + readENV("WEBSITE_HOSTNAME"))
     },
-    maxFailures   : readENV("LVCONNECT_MAX_FAILURES", 3),
-    firstFullDays : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
-    timeOffset    : readENV("LVCONNECT_TIME_OFFSET", 0)
+    maxFailures       : readENV("LVCONNECT_MAX_FAILURES", 3),
+    firstFullDays     : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
+    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset())
   };
 
   // set initial fetch time in case this is a first run
@@ -673,14 +714,17 @@ if( !module.parent ) {
   switch( args[0] ) {
 
     case "login":
-      promiseRetry(
-        { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5   },
-        ( retry, n ) => {
-          console.debug(`lvconnect: attempt to login # ${n}`);
-          return authorize( params )
-          .catch( retry );
-        }
-      )
+      return getProCredentials( params, 0 ) // initial credentals check
+      .then ( () => {
+        return promiseRetry(
+          { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5   },
+          ( retry, n ) => {
+            console.debug(`lvconnect: attempt to login # ${n}`);
+            return authorize( params, n )
+            .catch( retry );
+          }
+        )
+      } )
       .then ( ()   => { saveSession();                                     } )
       .catch( err  => { console.debug( err );                              } );
       break;
@@ -694,7 +738,7 @@ if( !module.parent ) {
             console.debug(
               `lvconnect: attempt to login and fetch data # ${n}`
             );
-            return authorize( params )
+            return authorize( params, n )
             .catch( retry );
           }
         );
@@ -716,7 +760,7 @@ if( !module.parent ) {
             console.debug(
               `lvconnect: attempt to login, fetch and upload data # ${n}`
             );
-            return authorize( params )
+            return authorize( params, n )
             .catch( retry );
           }
         );

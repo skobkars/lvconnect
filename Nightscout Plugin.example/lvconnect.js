@@ -7,21 +7,11 @@
 var engine = require('lvconnect');
 
 function init( env, bus ) {
-  if(   env.extendedSettings.lvconnect          &&
-      ( env.extendedSettings.lvconnect.userName
-        || ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.usProUserName )
-        ||   env.extendedSettings.lvconnect.proUserName
-      ) &&
-      ( env.extendedSettings.lvconnect.password
-        ||  ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.usProPassword )
-        ||    env.extendedSettings.lvconnect.proPassword
-      ) &&
-      ( env.extendedSettings.lvconnect.trustedDeviceToken
-        ||  ( env.extendedSettings.lvconnect.server == 'US' && env.extendedSettings.lvconnect.uspProTrustedDeviceToken )
-        ||    env.extendedSettings.lvconnect.proTrustedDeviceToken
-      )
+  if(   env.extendedSettings.lvconnect &&
+      ( env.extendedSettings.lvconnect.userName           || env.extendedSettings.lvconnect.proUserName           ) &&
+      ( env.extendedSettings.lvconnect.password           || env.extendedSettings.lvconnect.proPassword           ) &&
+      ( env.extendedSettings.lvconnect.trustedDeviceToken || env.extendedSettings.lvconnect.proTrustedDeviceToken )
   ) {
-
     return create( env, bus );
 
   } else {
@@ -33,27 +23,23 @@ function init( env, bus ) {
 function create( env, bus ) {
   let opts = {
     login         : {
-      accountName : env.extendedSettings.lvconnect.userName ||
-                    ( env.extendedSettings.lvconnect.server == 'US' ?
-                      env.extendedSettings.lvconnect.usProUserName :
-                      env.extendedSettings.lvconnect.proUserName ),
-      password    : env.extendedSettings.lvconnect.password ||
-                    ( env.extendedSettings.lvconnect.server == 'US' ?
-                      env.extendedSettings.lvconnect.usProPassword :
-                      env.extendedSettings.lvconnect.proPassword ),
+      accountName        : env.extendedSettings.lvconnect.userName ||
+                           env.extendedSettings.lvconnect.proUserName,
+      password           : env.extendedSettings.lvconnect.password ||
+                           env.extendedSettings.lvconnect.proPassword,
       trustedDeviceToken : env.extendedSettings.lvconnect.trustedDeviceToken ||
-                    ( env.extendedSettings.lvconnect.server == 'US' ?
-                      env.extendedSettings.lvconnect.usProTrustedDeviceToken :
-                      env.extendedSettings.lvconnect.proTrustedDeviceToken ),
-      patientId   : env.extendedSettings.lvconnect.patientId
-    },            // No shorter than 1 minute, or longer than 8 hours
-    interval      : env.extendedSettings.lvconnect.interval >    59999 ||
-                    env.extendedSettings.lvconnect.interval < 28800001 ?
-                    env.extendedSettings.lvconnect.interval :  3600000,
-    nightscout    : {},
-    maxFailures   : env.extendedSettings.lvconnect.maxFailures   || 3,
-    firstFullDays : env.extendedSettings.lvconnect.firstFullDays || 1,
-    timeOffset    : env.extendedSettings.lvconnect.timeOffset || 0
+                           env.extendedSettings.lvconnect.proTrustedDeviceToken,
+      patientId          : env.extendedSettings.lvconnect.patientId,
+      proCredentialsUrl  : env.extendedSettings.lvconnect.proCredentialsUrl,
+      proCredentialsKey  : env.extendedSettings.lvconnect.proCredentialsKey
+    },                   // No shorter than 1 minute, or longer than 8 hours
+    interval             : env.extendedSettings.lvconnect.interval >    59999 ||
+                           env.extendedSettings.lvconnect.interval < 28800001 ?
+                           env.extendedSettings.lvconnect.interval :  3600000,
+    nightscout           : {},
+    maxFailures          : env.extendedSettings.lvconnect.maxFailures       || 3,
+    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1,
+    timeOffsetMinutes    : env.extendedSettings.lvconnect.timeOffsetMinutes
   };
 
   return {
