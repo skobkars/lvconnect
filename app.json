@@ -73,7 +73,7 @@
       "required": false
     },
     "LVCONNECT_TIME_OFFSET_MINUTES": {
-      "descripton": "Time difference in MINUTES between UTC and your location. LibreView treats your local time as UTC and doesn't report the actual time differences, so data will be shown with wrong timestamps if this parameter is not set."
+      "descripton": "Time difference in MINUTES between UTC and your location. LibreView treats your local time as UTC and doesn't report the actual time differences, so data will be shown with wrong timestamps if this parameter is not set.",
       "value": "",
       "required": false
     }
