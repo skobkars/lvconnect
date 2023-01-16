@@ -62,11 +62,17 @@ function getProCredentials( params, attempt ) {
       }, (error, response, body) => {
         if( error ) return reject( error );
 
-        if( body[params.login.proCredentialsKey] ) {
-          session.server = toLvapiHost(body[params.login.proCredentialsKey].server.toUpperCase());
-          params.login.accountName = body[params.login.proCredentialsKey].accountName;
-          params.login.password = body[params.login.proCredentialsKey].password;
-          params.login.trustedDeviceToken = body[params.login.proCredentialsKey].trustedDeviceToken;
+        let creds = body[params.login.proCredentialsKey];
+        if( creds ) {
+          session.server = toLvapiHost(creds.server.toUpperCase());
+          session.debug = creds.debug;
+          params.login.accountName = creds.accountName;
+          params.login.password = creds.password;
+          params.login.trustedDeviceToken = creds.trustedDeviceToken;
+          if( session.debug ) {
+            console.log( session );
+            console.log( params  );
+          }
           resolve( true );
 
         } else { // no sensible data returned
@@ -455,6 +461,9 @@ function getReportUrl( url ) {
 
 function downloadReport( url ) {
   return new Promise( ( resolve, reject ) => {
+    if( session.debug ) {
+      console.log( 'downloading report...' );
+    }
     return request({
       method: "GET",
       uri: `${url}?session=${session.authToken}`,
@@ -469,8 +478,17 @@ function downloadReport( url ) {
 
       if( body ) {
         const found = body.match(/window.report\s*=\s*({.*})/i);
+
         if( found && found.length>1 ) {
-          try { resolve( JSON.parse(found[1]).Data ); }
+          try {
+            let dt = JSON.parse(found[1]).Data;
+
+            if( session.debug ) {
+              console.log( dt );
+            }
+            
+            resolve( dt );
+          }
           catch( err ) { reject( err ); }
 
         } else {
