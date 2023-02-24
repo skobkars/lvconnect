@@ -486,7 +486,7 @@ function downloadReport( url ) {
             if( session.debug ) {
               console.log( dt );
             }
-            
+
             resolve( dt );
           }
           catch( err ) { reject( err ); }
@@ -612,10 +612,11 @@ function readENV( varName, defaultValue ) {
  */
 function toLvapiHost( lvserver ) {
   return (
+    lvserver.toUpperCase() === "CA" ? "api-ca.libreview.io" : (
     lvserver.toUpperCase() === "EU" ? "api-eu.libreview.io" : (
     lvserver.toUpperCase() === "US" ? "api-us.libreview.io" : (
     lvserver.indexOf(".") > 1       ? lvserver :
-    "api.libreview.io" ))
+    "api.libreview.io" )))
   );
 }
 
@@ -661,7 +662,7 @@ function engine( params ) {
     return getProCredentials( params, 0 ) // initial credentals check
     .then ( () => {
       return promiseRetry(
-        { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5 },
+        { minTimeout: 10000, retries: params.maxFailures - 1, factor: 1.5 },
         ( retry, n ) => {
           console.debug(
             `lvconnect: attempt to login, fetch and upload data # ${n}`
@@ -773,7 +774,7 @@ if( !module.parent ) {
       restoreSession()
       .then ( ()   => {
         return promiseRetry(
-          { minTimeout: 3000, retries: params.maxFailures - 1, factor: 1.5 },
+          { minTimeout: 10000, retries: params.maxFailures - 1, factor: 1.5 },
           ( retry, n ) => {
             console.debug(
               `lvconnect: attempt to login, fetch and upload data # ${n}`
