@@ -332,9 +332,13 @@ function generateReports() {
   return new Promise( ( resolve, reject ) => {
     session.patient.primDevice = null;
     session.patient.secDevices = [];
+    let last_data = 10000, prmDev = null;
     for( let id in session.patient.dataSources ) {
-      if( !session.patient.primDevice && session.patient.dataSources[id].daysData.includes(1) ) {
-        session.patient.primDevice = {
+      let current_min = Math.min(...session.patient.dataSources[id].daysData);
+      if( !session.patient.primDevice && current_min<last_data ) {
+        last_data = current_min;
+        if( prmDev ) session.patient.secDevices.push(prmDev.id);
+        prmDev = {
           id              : id,
           typeId          : session.patient.dataSources[id].type,
           firmwareVersion : session.patient.dataSources[id].firmwareVersion
@@ -343,6 +347,7 @@ function generateReports() {
         session.patient.secDevices.push(id);
       }
     }
+    session.patient.primDevice = prmDev;
     if( session.patient.primDevice ) {
       return request({
         method: "POST",
@@ -436,7 +441,8 @@ function getReportUrl( url ) {
       uri: url,
       headers: {
         "User-Agent": agent,
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "Authorization": `Bearer ${session.authToken}`
       },
       json: true,
       rejectUnauthorized: true
