@@ -43,6 +43,8 @@ let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTime
         patient    : {}
       };
 
+console.log(`Default localTMZ: ${localTMZ}`);
+
 /**
  * Downloads credentials,json from url if it is not the first attempt to log in
  * See credentials.json.example
@@ -349,6 +351,36 @@ function generateReports() {
     }
     session.patient.primDevice = prmDev;
     if( session.patient.primDevice ) {
+      if( session.debug ) {
+        console.log({
+          method: "POST",
+          uri: `https://${session.server}/reports`,
+          headers: {
+            "User-Agent": agent,
+            "Accept": "application/json",
+            "Authorization": `Bearer ${session.authToken}`
+          },
+          body: {
+            PrimaryDeviceId                     : session.patient.primDevice.id,
+            PrimaryDeviceTypeId                 : session.patient.primDevice.typeId,
+            SecondaryDeviceIds                  : session.patient.secDevices,
+            PrintReportsWithPatientInformation  : false,
+            ReportIds                           : [ 500000 + session.patient.primDevice.typeId ],
+            ClientReportIDs                     : [ 5 ],
+            StartDates                          : [ session.lastDataTm - localTMZ ],
+            EndDate                             : Math.floor(+new Date() / 1000),
+            PatientId                           : session.patient.id,
+            CultureCode                         : "en-US",
+            // Country: "CA",
+            // CultureCodeCommunication: "en-US",
+            // DateFormat: 2,
+            // GlucoseUnits: 0,
+          },
+          json: true,
+          rejectUnauthorized: true
+
+        });
+      }
       return request({
         method: "POST",
         uri: `https://${session.server}/reports`,
@@ -436,6 +468,21 @@ function getChannels( url ) {
 
 function getReportUrl( url ) {
   return new Promise( ( resolve, reject ) => {
+
+
+console.log({
+  method: "GET",
+  uri: url,
+  headers: {
+    "User-Agent": agent,
+    "Accept": "application/json",
+    "Authorization": `Bearer ${session.authToken}`
+  },
+  json: true,
+  rejectUnauthorized: true
+});
+
+
     return request({
       method: "GET",
       uri: url,
@@ -451,6 +498,10 @@ function getReportUrl( url ) {
       if( error ) return reject( error );
 
       if( body.args ) {
+        if( session.debug ) {
+          console.log('body.args: ');
+          console.debug(body.args);
+        }
         if( body.args.urls && body.args.urls[5] )
           resolve( body.args.urls[5] );
 
@@ -656,9 +707,8 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
-      new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
-  console.info( `localTMZ: ${localTMZ}` );
+  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
+  console.log(`localTMZ: ${localTMZ}`);
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
     session.lastDataTm =  new Date().setHours(0,0,0,0) / 1000 -
@@ -755,6 +805,7 @@ if( !module.parent ) {
       break;
 
     case "fetch":
+
       restoreSession()
       .then ( ()   => {
         return promiseRetry(

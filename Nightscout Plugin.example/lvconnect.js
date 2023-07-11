@@ -6,6 +6,13 @@
 
 var engine = require('lvconnect');
 
+const fs = require('fs');
+fs.watch("/opt/app/node_modules/lvconnect", (event_type, file_name) => {
+    console.log("Deleting Require cache for " + file_name);
+    delete require.cache[ require.resolve("/opt/app/node_modules/lvconnect/" + file_name)];
+    engine = require('lvconnect');
+});
+
 function init( env, bus ) {
   if(   env.extendedSettings.lvconnect &&
       ( env.extendedSettings.lvconnect.userName           || env.extendedSettings.lvconnect.proUserName           ) &&
@@ -32,14 +39,13 @@ function create( env, bus ) {
       patientId          : env.extendedSettings.lvconnect.patientId,
       proCredentialsUrl  : env.extendedSettings.lvconnect.proCredentialsUrl,
       proCredentialsKey  : env.extendedSettings.lvconnect.proCredentialsKey
-    },                   // No shorter than 1 minute, or longer than 8 hours
-    interval             : env.extendedSettings.lvconnect.interval >    59999 ||
+    },                   // No shorter than 5 minutes, or longer than 8 hours
+    interval             : env.extendedSettings.lvconnect.interval >   299999 ||
                            env.extendedSettings.lvconnect.interval < 28800001 ?
                            env.extendedSettings.lvconnect.interval :  3600000,
     nightscout           : {},
     maxFailures          : env.extendedSettings.lvconnect.maxFailures       || 3,
-    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1,
-    timeOffsetMinutes    : env.extendedSettings.lvconnect.timeOffsetMinutes
+    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1
   };
 
   return {
