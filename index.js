@@ -43,8 +43,6 @@ let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTime
         patient    : {}
       };
 
-console.log(`Default localTMZ: ${localTMZ}`);
-
 /**
  * Downloads credentials,json from url if it is not the first attempt to log in
  * See credentials.json.example
@@ -378,8 +376,7 @@ function generateReports() {
           },
           json: true,
           rejectUnauthorized: true
-
-        });
+          });
       }
       return request({
         method: "POST",
@@ -468,21 +465,6 @@ function getChannels( url ) {
 
 function getReportUrl( url ) {
   return new Promise( ( resolve, reject ) => {
-
-
-console.log({
-  method: "GET",
-  uri: url,
-  headers: {
-    "User-Agent": agent,
-    "Accept": "application/json",
-    "Authorization": `Bearer ${session.authToken}`
-  },
-  json: true,
-  rejectUnauthorized: true
-});
-
-
     return request({
       method: "GET",
       uri: url,
@@ -707,8 +689,9 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
-  console.log(`localTMZ: ${localTMZ}`);
+  localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
+      new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
+  console.info( `localTMZ: ${localTMZ}` );
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
     session.lastDataTm =  new Date().setHours(0,0,0,0) / 1000 -
@@ -805,7 +788,6 @@ if( !module.parent ) {
       break;
 
     case "fetch":
-
       restoreSession()
       .then ( ()   => {
         return promiseRetry(

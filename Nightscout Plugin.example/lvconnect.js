@@ -45,7 +45,8 @@ function create( env, bus ) {
                            env.extendedSettings.lvconnect.interval :  3600000,
     nightscout           : {},
     maxFailures          : env.extendedSettings.lvconnect.maxFailures       || 3,
-    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1
+    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1,
+    timeOffsetMinutes    : env.extendedSettings.lvconnect.timeOffsetMinutes
   };
 
   return {
