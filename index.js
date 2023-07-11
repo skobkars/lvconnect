@@ -34,7 +34,7 @@ const Promise            = require("promise"),
       agent              = `${meta.name}/${meta.version}`,
       min_secret_length  = 12
 
-let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60,
+let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset())) * 60,
       session      = {
         server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
         uriPrefix  : "",
@@ -43,6 +43,7 @@ let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTime
         patient    : {}
       };
 
+console.log(`Default localTMZ: ${localTMZ}`);
 /**
  * Downloads credentials,json from url if it is not the first attempt to log in
  * See credentials.json.example
@@ -689,8 +690,9 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
-      new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
+  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset())) * 60;
+  // localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
+  //     new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
   console.info( `localTMZ: ${localTMZ}` );
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
@@ -760,7 +762,7 @@ if( !module.parent ) {
     },
     maxFailures       : readENV("LVCONNECT_MAX_FAILURES", 3),
     firstFullDays     : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
-    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset())
+    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset()))
   };
 
   // set initial fetch time in case this is a first run
