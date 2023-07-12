@@ -34,7 +34,7 @@ const Promise            = require("promise"),
       agent              = `${meta.name}/${meta.version}`,
       min_secret_length  = 12
 
-let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset())) * 60,
+let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60,
       session      = {
         server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
         uriPrefix  : "",
@@ -464,7 +464,7 @@ function getChannels( url ) {
   });
 }
 
-function getReportUrl( url ) {
+function getReportUrl( url, attempt ) {
   return new Promise( ( resolve, reject ) => {
     return request({
       method: "GET",
@@ -480,16 +480,27 @@ function getReportUrl( url ) {
     }, (error, response, body) => {
       if( error ) return reject( error );
 
-      if( body.args ) {
-        if( session.debug ) {
-          console.log('body.args: ');
-          console.debug(body.args);
-        }
-        if( body.args.urls && body.args.urls[5] )
-          resolve( body.args.urls[5] );
+      if( body.operation ) {
 
-        else
-          reject( "getReportUrl: No report URL provided." );
+        if( body.operation == 'update' ) {
+
+          if( body.args.urls && body.args.urls[5] )
+            resolve( body.args.urls[5] );
+
+          else
+            reject( "getReportUrl: No report URL provided." );
+
+        } else if ( body.operation == 'started' ) {
+          reject( "getReportUrl: Report is being generated." );
+
+        } else {
+          if( session.debug ) {
+            console.log('body: ');
+            console.debug(body.operation);
+            console.debug(body.args);
+          }
+          reject( body.operation );
+        }
 
       } else {// no sensible data has been returned
         reject( "getReportUrl: Unknown response, check connection parameters." );
@@ -547,11 +558,19 @@ function downloadReport( url ) {
 /**
  * Fetch data from LV API server through DailLog report.
  */
-function fetch() {
+function fetch( params ) {
   return getDataSources()
   .then( ()  => { return generateReports();     } )
   .then( url => { return getChannels( url );    } )
-  .then( url => { return getReportUrl( url );   } )
+  .then( url => { return promiseRetry(
+    { minTimeout: 2000, retries: params.maxFailures - 1, factor: 1.5 },
+    ( retry, n ) => {
+      console.debug(
+        `lvconnect: attempt to get Report URL # ${n}`
+      );
+      return getReportUrl( url, n ).catch( retry );
+    }
+  )})
   .then( url => { return downloadReport( url ); } )
 }
 
@@ -690,7 +709,7 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset())) * 60;
+  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
   // localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
   //     new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
   console.info( `localTMZ: ${localTMZ}` );
@@ -762,7 +781,7 @@ if( !module.parent ) {
     },
     maxFailures       : readENV("LVCONNECT_MAX_FAILURES", 3),
     firstFullDays     : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
-    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", -(new Date().getTimezoneOffset()))
+    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset())
   };
 
   // set initial fetch time in case this is a first run
