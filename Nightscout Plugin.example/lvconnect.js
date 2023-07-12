@@ -8,9 +8,12 @@ var engine = require('lvconnect');
 
 const fs = require('fs');
 fs.watch("/opt/app/node_modules/lvconnect", (event_type, file_name) => {
+  if( event_type == 'change') {
+    console.log(event_type);
     console.log("Deleting Require cache for " + file_name);
     delete require.cache[ require.resolve("/opt/app/node_modules/lvconnect/" + file_name)];
     engine = require('lvconnect');
+  }
 });
 
 function init( env, bus ) {
@@ -23,7 +26,6 @@ function init( env, bus ) {
 
   } else {
     console.info( 'LibreView connect is not enabled, or misconfigured.' );
-
   }
 }
 
@@ -52,7 +54,8 @@ function create( env, bus ) {
   return {
     startEngine : ( entries ) => {
 
-      opts.callback = callback( entries );
+      opts.callback  = callback( entries );
+      opts.lastts    = lastts( entries );
 
       let timer = null;
       (function run() {
@@ -75,6 +78,19 @@ function callback( entries ) {
         if( err ) console.error('lvconnect storage error: ', err);
       });
   };
+}
+
+function lastts( entries ) {
+  return ( records ) => {
+    entries.list({
+      find: {
+        device: {
+          $regex: 'lvconnect'
+        }
+      },
+      count: 1,
+    }, records );
+  }
 }
 
 init.create   = create;

@@ -32,18 +32,18 @@ const Promise            = require("promise"),
       crypto             = require("crypto"),
       meta               = require("./package.json"),
       agent              = `${meta.name}/${meta.version}`,
-      min_secret_length  = 12
+      min_secret_length  = 12;
 
-let   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60,
-      session      = {
+let   session      = {
         server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
         uriPrefix  : "",
         lastDataTm : null,
         user       : {},
         patient    : {}
-      };
+      },
+      localTMZ = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
+      console.log(`Default localTMZ: ${localTMZ}`);
 
-console.log(`Default localTMZ: ${localTMZ}`);
 /**
  * Downloads credentials,json from url if it is not the first attempt to log in
  * See credentials.json.example
@@ -329,8 +329,68 @@ function getDataSources() {
   });
 }
 
-function generateReports() {
+function findLastRecord( params ) {
   return new Promise( ( resolve, reject ) => {
+    if (params && params.lastts && params.lastts.call) {
+      if( session.debug )
+        console.debug( 'calling lastts function for last lvconnect record' );
+
+      params.lastts( (err, records) => {
+        if(err) {
+          reject( err );
+
+        } else if( records.length > 0) {
+          if( session.debug ) console.log( records );
+
+          console.log( `lastts: Last DB entry from ${records[0].date}` );
+          resolve( records[0].date );
+
+        } else {
+          resolve( null );
+        }
+      });
+
+    } else if( params.nightscout.endpoint ) {
+      if( session.debug )
+        console.debug( `querying Nightscout for last lvconnect record: ${params.nightscout.endpoint}` );
+
+      return request({
+        method: "GET",
+        uri: `${params.nightscout.endpoint}/api/v1/entries.json?find[device][$regex]=lvconnect&count=1`,
+        headers: {
+          "User-Agent": agent,
+          "Accept": "application/json"
+        },
+        json: true,
+        rejectUnauthorized: true
+
+      }, (error, response, records) => {
+        if( error ) return reject( error );
+
+        else if( records.length > 0) {
+          if( session.debug ) console.log( records );
+
+          console.log( `Nightscout: Last DB entry from ${records[0].date}` );
+          resolve( records[0].date );
+
+        } else {
+          resolve( null );
+        }
+      });
+
+    } else {
+      console.log( 'findLastRecord: neither callback function, nor Nightscout endpoint provided, cannot find last record.' );
+      return resolve( null );
+    }
+  });
+}
+
+function generateReports( ts ) {
+  return new Promise( ( resolve, reject ) => {
+
+    if( ts ) session.lastDataTm = ts / 1000;
+    if( session.debug ) console.log(`generateReports: lastDataTm = ${session.lastDataTm}`);
+
     session.patient.primDevice = null;
     session.patient.secDevices = [];
     let last_data = 10000, prmDev = null;
@@ -350,36 +410,7 @@ function generateReports() {
     }
     session.patient.primDevice = prmDev;
     if( session.patient.primDevice ) {
-      if( session.debug ) {
-        console.log({
-          method: "POST",
-          uri: `https://${session.server}/reports`,
-          headers: {
-            "User-Agent": agent,
-            "Accept": "application/json",
-            "Authorization": `Bearer ${session.authToken}`
-          },
-          body: {
-            PrimaryDeviceId                     : session.patient.primDevice.id,
-            PrimaryDeviceTypeId                 : session.patient.primDevice.typeId,
-            SecondaryDeviceIds                  : session.patient.secDevices,
-            PrintReportsWithPatientInformation  : false,
-            ReportIds                           : [ 500000 + session.patient.primDevice.typeId ],
-            ClientReportIDs                     : [ 5 ],
-            StartDates                          : [ session.lastDataTm - localTMZ ],
-            EndDate                             : Math.floor(+new Date() / 1000),
-            PatientId                           : session.patient.id,
-            CultureCode                         : "en-US",
-            // Country: "CA",
-            // CultureCodeCommunication: "en-US",
-            // DateFormat: 2,
-            // GlucoseUnits: 0,
-          },
-          json: true,
-          rejectUnauthorized: true
-          });
-      }
-      return request({
+      let req = {
         method: "POST",
         uri: `https://${session.server}/reports`,
         headers: {
@@ -394,7 +425,7 @@ function generateReports() {
           PrintReportsWithPatientInformation  : false,
           ReportIds                           : [ 500000 + session.patient.primDevice.typeId ],
           ClientReportIDs                     : [ 5 ],
-          StartDates                          : [ session.lastDataTm - localTMZ ],
+          StartDates                          : [ session.lastDataTm - localTMZ + 1 ],
           EndDate                             : Math.floor(+new Date() / 1000),
           PatientId                           : session.patient.id,
           CultureCode                         : "en-US",
@@ -405,8 +436,9 @@ function generateReports() {
         },
         json: true,
         rejectUnauthorized: true
-
-      }, (error, response, body) => {
+      }
+      if( session.debug ) console.log(req);
+      return request( req, (error, response, body) => {
         if( error ) return reject( error );
 
         if( body.ticket ) { // received new authTicket
@@ -560,8 +592,9 @@ function downloadReport( url ) {
  */
 function fetch( params ) {
   return getDataSources()
-  .then( ()  => { return generateReports();     } )
-  .then( url => { return getChannels( url );    } )
+  .then( ()  => { return findLastRecord( params ); } )
+  .then( ts  => { return generateReports( ts );    } )
+  .then( url => { return getChannels( url );       } )
   .then( url => { return promiseRetry(
     { minTimeout: 2000, retries: params.maxFailures - 1, factor: 1.5 },
     ( retry, n ) => {
@@ -709,9 +742,9 @@ function flatDeep(arr, d = 1) {
 function engine( params ) {
 
   // Reset localTMZ in case a time change happened
-  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
   // localTMZ = ( (params.timeOffsetMinutes === '' || params.timeOffsetMinutes === null) ?
   //     new Date().getTimezoneOffset() : params.timeOffsetMinutes ) * 60
+  localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
   console.info( `localTMZ: ${localTMZ}` );
 
   if( !session.lastDataTm ) // set start fetch time in case this is a first run
@@ -742,16 +775,9 @@ function engine( params ) {
   return my;
 }
 
-// engine.fetch           = fetch;
-// engine.authorize       = authorize; // returns Promise
-// engine.authorize_then  = ( params, then ) => {
-//   authorize(params)
-//   .then(
-//     value => { then( value );                       },
-//     error => { console.info( error ); then( false ); }
-//   );
-// };
-module.exports         = engine;
+module.exports = engine;
+
+///////////////////////////////////////////////////////////////////////////
 
 /**
  * The below code is for developing stage, and when run from a
@@ -781,7 +807,8 @@ if( !module.parent ) {
     },
     maxFailures       : readENV("LVCONNECT_MAX_FAILURES", 3),
     firstFullDays     : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
-    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset())
+    timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()),
+    lastts            : null
   };
 
   // set initial fetch time in case this is a first run
@@ -863,49 +890,49 @@ if( !module.parent ) {
       })();
       break;
   }
-}
 
-/**
- * The below code is for developing stage.
- * Saves session parameters to local file.
- */
-function saveSession() {
-  console.debug("saving session...");
-  require("fs").writeFile( "session.json",
-    JSON.stringify( session ),
-    "utf8",
-    err => { if (err) console.debug( err ); }
-  );
-}
+  /**
+   * The below code is for developing stage.
+   * Saves session parameters to local file.
+   */
+  function saveSession() {
+    console.debug("saving session...");
+    require("fs").writeFile( "session.json",
+      JSON.stringify( session ),
+      "utf8",
+      err => { if (err) console.debug( err ); }
+    );
+  }
 
-/**
- * The below code is for developing stage.
- * Restores session parameters from local file.
- */
-function restoreSession() {
-  return new Promise( ( resolve, reject ) => {
-    return require("fs").readFile( "session.json", "utf8", (error, data) => {
-      if( data ) {
-        try {
-          console.debug("reading stored session...");
-          session = JSON.parse(data);
-        } catch( e ) { console.debug(e); }
-      }
-      resolve();
+  /**
+   * The below code is for developing stage.
+   * Restores session parameters from local file.
+   */
+  function restoreSession() {
+    return new Promise( ( resolve, reject ) => {
+      return require("fs").readFile( "session.json", "utf8", (error, data) => {
+        if( data ) {
+          try {
+            console.debug("reading stored session...");
+            session = JSON.parse(data);
+          } catch( e ) { console.debug(e); }
+        }
+        resolve();
+      });
     });
-  });
-}
+  }
 
-/**
- * The below code is for developing stage.
- * Saves fetched data to local file.
- */
-function saveData(data) {
-  console.debug("saving data...");
-  require("fs").writeFile( "fetched.json",
-    JSON.stringify( data ),
-    "utf8",
-    err => { if (err) console.debug( err ); }
-  );
-  return data;
+  /**
+   * The below code is for developing stage.
+   * Saves fetched data to local file.
+   */
+  function saveData(data) {
+    console.debug("saving data...");
+    require("fs").writeFile( "fetched.json",
+      JSON.stringify( data ),
+      "utf8",
+      err => { if (err) console.debug( err ); }
+    );
+    return data;
+  }
 }
