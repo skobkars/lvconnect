@@ -723,19 +723,6 @@ function flatDeep(arr, d = 1) {
                 : arr.slice();
 };
 
-// function nullify_battery_status (params, then) {
-//   let shasum = crypto.createHash("sha1");
-//   let hash = shasum.update(params.nightscout.API_SECRET);
-//   let headers = { "api-secret": shasum.digest("hex")
-//                 , "Accept": "application/json" };
-//   let url = `${params.nightscout.endpoint}/api/v1/devicestatus.json`;
-//   let body = { uploaderBattery: false };
-//   let req = { uri: url, body: body, json: true, headers: headers, method: "POST"
-//             , rejectUnauthorized: false };
-//   return request(req, then);
-// }
-
-
 /**
  * Provide public, testable API
  */

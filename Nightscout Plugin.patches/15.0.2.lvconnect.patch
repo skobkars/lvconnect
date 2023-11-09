@@ -1,0 +1,147 @@
+diff --git a/lib/plugins/lvconnect.js b/lib/plugins/lvconnect.js
+new file mode 100644
+index 00000000..f2e8a015
+--- /dev/null
++++ b/lib/plugins/lvconnect.js
+@@ -0,0 +1,94 @@
++'use strict';
++
++var engine = require('lvconnect');
++
++const fs = require('fs');
++fs.watch("/opt/app/node_modules/lvconnect", (event_type, file_name) => {
++  if( event_type == 'change') {
++    console.log(event_type);
++    console.log("Deleting Require cache for " + file_name);
++    delete require.cache[ require.resolve("/opt/app/node_modules/lvconnect/" + file_name)];
++    engine = require('lvconnect');
++  }
++});
++
++function init( env, bus ) {
++  if(   env.extendedSettings.lvconnect &&
++      ( env.extendedSettings.lvconnect.userName           || env.extendedSettings.lvconnect.proUserName           ) &&
++      ( env.extendedSettings.lvconnect.password           || env.extendedSettings.lvconnect.proPassword           ) &&
++      ( env.extendedSettings.lvconnect.trustedDeviceToken || env.extendedSettings.lvconnect.proTrustedDeviceToken )
++  ) {
++    return create( env, bus );
++
++  } else {
++    console.info( 'LibreView connect is not enabled, or misconfigured.' );
++  }
++}
++
++function create( env, bus ) {
++  let opts = {
++    login         : {
++      accountName        : env.extendedSettings.lvconnect.userName ||
++                           env.extendedSettings.lvconnect.proUserName,
++      password           : env.extendedSettings.lvconnect.password ||
++                           env.extendedSettings.lvconnect.proPassword,
++      trustedDeviceToken : env.extendedSettings.lvconnect.trustedDeviceToken ||
++                           env.extendedSettings.lvconnect.proTrustedDeviceToken,
++      patientId          : env.extendedSettings.lvconnect.patientId,
++      proCredentialsUrl  : env.extendedSettings.lvconnect.proCredentialsUrl,
++      proCredentialsKey  : env.extendedSettings.lvconnect.proCredentialsKey
++    },                   // No shorter than 5 minutes, or longer than 8 hours
++    interval             : env.extendedSettings.lvconnect.interval >   299999 ||
++                           env.extendedSettings.lvconnect.interval < 28800001 ?
++                           env.extendedSettings.lvconnect.interval :  3600000,
++    nightscout           : {},
++    maxFailures          : env.extendedSettings.lvconnect.maxFailures       || 3,
++    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1
++    // timeOffsetMinutes    : env.extendedSettings.lvconnect.timeOffsetMinutes
++  };
++
++  return {
++    startEngine : ( entries ) => {
++
++      opts.callback  = callback( entries );
++      opts.lastts    = lastts( entries );
++
++      let timer = null;
++      (function run() {
++        console.info( "Fetching LibreView Data..." );
++        engine(opts);
++        timer = setTimeout(run, opts.interval);
++      })();
++
++      if (bus) bus.on('teardown', () => { if( timer ) clearInterval(timer); });
++    }
++  };
++}
++
++function callback( entries ) {
++  return ( err, glucose ) => {
++    if( err )
++      console.error( 'lvconnect error: ', err );
++    else
++      entries.create( glucose, ( err ) => {
++        if( err ) console.error('lvconnect storage error: ', err);
++      });
++  };
++}
++
++function lastts( entries ) {
++  return ( records ) => {
++    entries.list({
++      find: {
++        device: {
++          $regex: 'lvconnect'
++        }
++      },
++      count: 1,
++    }, records );
++  }
++}
++
++init.create   = create;
++init.callback = callback;
++exports = module.exports = init;
+diff --git a/lib/server/bootevent.js b/lib/server/bootevent.js
+index b377abcc..4f362adc 100644
+--- a/lib/server/bootevent.js
++++ b/lib/server/bootevent.js
+@@ -357,6 +357,22 @@ function boot (env, language) {
+     next( );
+   }
+ 
++  function setupLVConnect (ctx, next) {
++
++    console.log('Executing setupLVConnect');
++
++    if (hasBootErrors(ctx)) {
++      return next();
++    }
++
++    ctx.lvconnect = require('../plugins/lvconnect')(env, ctx.bus);
++    if (ctx.lvconnect) {
++      ctx.lvconnect.startEngine(ctx.entries);
++    }
++    next( );
++  }
++
++
+   function finishBoot (ctx, next) {
+ 
+     console.log('Executing finishBoot');
+@@ -386,6 +402,7 @@ function boot (env, language) {
+     .acquire(setupConnect)
+     .acquire(setupBridge)
+     .acquire(setupMMConnect)
++    .acquire(setupLVConnect)
+     .acquire(finishBoot);
+ }
+ 
+diff --git a/package.json b/package.json
+index ef36cda4..e489e0e3 100644
+--- a/package.json
++++ b/package.json
+@@ -106,6 +106,7 @@
+     "jsdom": "=11.11.0",
+     "jsonwebtoken": "^9.0.0",
+     "lodash": "^4.17.20",
++    "lvconnect": "^0.1.21",
+     "memory-cache": "^0.2.0",
+     "mime": "^2.4.6",
+     "minimed-connect-to-nightscout": "^1.5.5",
