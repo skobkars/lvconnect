@@ -94,7 +94,10 @@ function checkLvapi() {
     return request({
       method: "OPTIONS",
       uri: `https://${session.server}/auth/login`,
-      headers: { "Accept": "*/*" },
+      headers: {
+        "User-Agent": agent,
+        "Accept": "*/*"
+      },
       rejectUnauthorized: true
     }, (error, response) => {
       if( error ) return reject( error );
