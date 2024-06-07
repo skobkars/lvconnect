@@ -30,7 +30,8 @@ lvconnect copies your CGM data from LibreView web services to a [Nightscout](htt
 * `LVCONNECT_PRO_TRUSTED_DEVICE_TOKEN` - Pro account's trusted device token for 2FA verification
 * `LVCONNECT_PATIENT_ID` - LibreView Pro connected patient UUID. Used with Pro accounts to access one of the connected patients data. Ignored for personal LibreView accounts.
 * `LVCONNECT_INTERVAL` (3600000) - The time (in milliseconds) to wait between each update. Default is 1 hour
-* `LVCONNECT_MAX_FAILURES` (3) -The maximum number of attempts to connect to the LibreView server.
+* `LVCONNECT_FETCH_TIMEOUT` (2000) - Number of millisecods to wait for the LibreView servers' response
+* `LVCONNECT_MAX_FAILURES` (3) - The maximum number of attempts to connect to the LibreView server.
 * `LVCONNECT_FIRST_FULL_DAYS` (90) - The number of days to search for data on the first update only.
 * `NS` - A fully-qualified Nightscout URL (e.g. `https://sitename.herokuapp.com`) which overrides `WEBSITE_HOSTNAME`
 * `LVCONNECT_TIME_OFFSET_MINUTES` - Time difference in MINUTES between UTC and your location. LibreView treats your local time as UTC and doesn't report the actual time differences, so data will be shown with wrong timestamps if this parameter is not set.

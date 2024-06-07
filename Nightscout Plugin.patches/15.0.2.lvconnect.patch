@@ -39,6 +39,7 @@ index 00000000..d230ac20
 +                           env.extendedSettings.lvconnect.interval :  3600000,
 +    nightscout           : {},
 +    maxFailures          : env.extendedSettings.lvconnect.maxFailures       || 3,
++    fetchTimeout         : env.extendedSettings.lvconnect.fetchTimeout      || 2000,
 +    firstFullDays        : env.extendedSettings.lvconnect.firstFullDays     || 1
 +    // timeOffsetMinutes    : env.extendedSettings.lvconnect.timeOffsetMinutes
 +  };
@@ -95,7 +96,7 @@ index b377abcc..4f362adc 100644
 @@ -357,6 +357,22 @@ function boot (env, language) {
      next( );
    }
- 
+
 +  function setupLVConnect (ctx, next) {
 +
 +    console.log('Executing setupLVConnect');
@@ -113,7 +114,7 @@ index b377abcc..4f362adc 100644
 +
 +
    function finishBoot (ctx, next) {
- 
+
      console.log('Executing finishBoot');
 @@ -386,6 +402,7 @@ function boot (env, language) {
      .acquire(setupConnect)
@@ -122,7 +123,7 @@ index b377abcc..4f362adc 100644
 +    .acquire(setupLVConnect)
      .acquire(finishBoot);
  }
- 
+
 diff --git a/package.json b/package.json
 index ef36cda4..0fd957cf 100644
 --- a/package.json

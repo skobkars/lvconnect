@@ -57,6 +57,11 @@
       "value": "3600000",
       "required": false
     },
+    "LVCONNECT_FETCH_TIMEOUT": {
+      "description": "OPTIONAL: Number of millisecods to wait for the LibreView servers' response. Default: 2000",
+      "value": "2000",
+      "required": false
+    },
     "LVCONNECT_MAX_FAILURES": {
       "description": "OPTIONAL: The maximum number of attempts to connect to the LibreView server. Default: 3",
       "value": "3",

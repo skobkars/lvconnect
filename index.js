@@ -34,12 +34,13 @@ const Promise            = require("promise"),
       agent              = `${meta.name}/${meta.version}`,
       min_secret_length  = 12;
 
-let   session      = {
-        server     : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
-        uriPrefix  : "",
-        lastDataTm : null,
-        user       : {},
-        patient    : {}
+let   session        = {
+        server       : toLvapiHost(readENV("LVCONNECT_SERVER","api.libreview.io")),
+        uriPrefix    : "",
+        lastDataTm   : null,
+        user         : {},
+        patient      : {},
+        fetchTimeout : toLvapiHost(readENV("LVCONNECT_FETCH_TIMEOUT",2000))
       },
       localTMZ = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
       console.log(`Default localTMZ: ${localTMZ}`);
@@ -134,7 +135,8 @@ function login( params ) {
             "trustedDeviceToken": params.login.trustedDeviceToken
           },
           json: true,
-          rejectUnauthorized: true
+          rejectUnauthorized: true,
+          timeout: session.fetchTimeout
 
         }, (error, response, body) => {
           if( error ) return reject( error );
@@ -168,7 +170,8 @@ function login( params ) {
                     "Authorization": `Bearer ${session.authToken}`
                   },
                   json: true,
-                  rejectUnauthorized: true
+                  rejectUnauthorized: true,
+                  timeout: session.fetchTimeout
 
                 }, (error, response, body) => {
                   if( error ) return reject( error );
@@ -232,7 +235,8 @@ function getPatientData( params ) {
         "Authorization": `Bearer ${session.authToken}`
       },
       json: true,
-      rejectUnauthorized: true
+      rejectUnauthorized: true,
+      timeout: session.fetchTimeout
 
     }, (error, response, body) => {
       if( error ) return reject( error );
@@ -303,7 +307,8 @@ function getDataSources() {
         "Authorization": `Bearer ${session.authToken}`
       },
       json: true,
-      rejectUnauthorized: true
+      rejectUnauthorized: true,
+      timeout: session.fetchTimeout
 
     }, (error, response, body) => {
       if( error ) return reject( error );
@@ -438,7 +443,8 @@ function generateReports( ts ) {
           // GlucoseUnits: 0,
         },
         json: true,
-        rejectUnauthorized: true
+        rejectUnauthorized: true,
+        timeout: session.fetchTimeout
       }
       if( session.debug ) console.log(req);
       return request( req, (error, response, body) => {
@@ -480,7 +486,8 @@ function getChannels( url ) {
         "Authorization": `Bearer ${session.authToken}`
       },
       json: true,
-      rejectUnauthorized: true
+      rejectUnauthorized: true,
+      timeout: session.fetchTimeout
 
     }, (error, response, body) => {
       if( error ) return reject( error );
@@ -510,7 +517,8 @@ function getReportUrl( url, attempt ) {
         "Authorization": `Bearer ${session.authToken}`
       },
       json: true,
-      rejectUnauthorized: true
+      rejectUnauthorized: true,
+      timeout: session.fetchTimeout
 
     }, (error, response, body) => {
       if( error ) return reject( error );
@@ -557,7 +565,8 @@ function downloadReport( url ) {
         "User-Agent": agent,
         "Accept": "text/html"
       },
-      rejectUnauthorized: true
+      rejectUnauthorized: true,
+      timeout: session.fetchTimeout
 
     }, (error, response, body) => {
       if( error ) return reject( error );
@@ -591,7 +600,7 @@ function downloadReport( url ) {
 }
 
 /**
- * Fetch data from LV API server through DailLog report.
+ * Fetch data from LV API server through Daily Log report.
  */
 function fetch( params ) {
   return getDataSources()
@@ -737,9 +746,11 @@ function engine( params ) {
   localTMZ     = readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()) * 60;
   console.info( `localTMZ: ${localTMZ}` );
 
-  if( !session.lastDataTm ) // set start fetch time in case this is a first run
-    session.lastDataTm =  new Date().setHours(0,0,0,0) / 1000 -
-      localTMZ - params.firstFullDays * 86400;
+  // set start fetch time in case this is a first run
+  if( !session.lastDataTm ) {
+    session.lastDataTm   = new Date().setHours(0,0,0,0) / 1000 - localTMZ - params.firstFullDays * 86400;
+    session.fetchTimeout = params.fetchTimeout;
+  }
 
   function my() {
     return getProCredentials( params, 0 ) // initial credentals check
@@ -795,6 +806,7 @@ if( !module.parent ) {
       API_SECRET      : readENV("API_SECRET"),
       endpoint        : readENV("NS", "https://" + readENV("WEBSITE_HOSTNAME"))
     },
+    fetchTimeout      : readENV("LVCONNECT_FETCH_TIMEOUT", 2000),
     maxFailures       : readENV("LVCONNECT_MAX_FAILURES", 3),
     firstFullDays     : readENV("LVCONNECT_FIRST_FULL_DAYS", 90),
     timeOffsetMinutes : readENV("LVCONNECT_TIME_OFFSET_MINUTES", new Date().getTimezoneOffset()),
@@ -802,9 +814,8 @@ if( !module.parent ) {
   };
 
   // set initial fetch time in case this is a first run
-  session.lastDataTm =  new Date().setHours(0,0,0,0) / 1000 - localTMZ -
-                        params.firstFullDays * 86400;
-
+  session.lastDataTm   = new Date().setHours(0,0,0,0) / 1000 - localTMZ - params.firstFullDays * 86400;
+  session.fetchTimeout = params.fetchTimeout;
 
   let args = process.argv.slice(2);
   switch( args[0] ) {
