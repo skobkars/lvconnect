@@ -71,6 +71,12 @@ function getProCredentials( params, attempt ) {
           params.login.accountName = creds.accountName;
           params.login.password = creds.password;
           params.login.trustedDeviceToken = creds.trustedDeviceToken;
+          if(creds.authToken && creds.tokenExpires > +new Date() ) {
+            session.authToken    = creds.authToken;
+            session.tokenExpires = creds.tokenExpires;
+            resolve( getPatientData( params ) );
+
+          }
           if( session.debug ) {
             console.log( session );
             console.log( params  );
@@ -591,7 +597,9 @@ function downloadReport( url ) {
         }
 
       } else { // no sensible data has been returned
-        console.debug(response);
+        if( session.debug ) {
+          console.debug(response);
+        }
         reject( "downloadReport: Unknown response, check connection parameters." );
 
       }
